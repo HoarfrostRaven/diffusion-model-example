@@ -76,7 +76,7 @@ def plot_sample(x_gen_store, n_sample, nrows, save_dir, fn,  w, save=False):
                             sharex=True, sharey=True, figsize=(ncols, nrows))
 
     def animate_diff(i, store):
-        print(f'gif animating frame {i} of {store.shape[0]}', end='\r')
+        print(f'gif animating frame {i+1} of {store.shape[0]}', end='\r')
         plots = []
         for row in range(nrows):
             for col in range(ncols):
@@ -94,3 +94,14 @@ def plot_sample(x_gen_store, n_sample, nrows, save_dir, fn,  w, save=False):
                  dpi=100, writer=PillowWriter(fps=5))
         print(f"saved gif at {save_dir}{fn}_w{w}.gif")
     return ani
+
+
+def show_images(imgs, nrow=2):
+    _, axs = plt.subplots(nrow, imgs.shape[0] // nrow, figsize=(4, 2))
+    axs = axs.flatten()
+    for img, ax in zip(imgs, axs):
+        img = (img.permute(1, 2, 0).clip(-1, 1).detach().cpu().numpy() + 1) / 2
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.imshow(img)
+    plt.show()
