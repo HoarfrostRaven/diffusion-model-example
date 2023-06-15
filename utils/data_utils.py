@@ -5,13 +5,13 @@ from torch.utils.data import Dataset
 
 
 class CustomDataset(Dataset):
-    def __init__(self, sfilename, lfilename, transform, null_context=False):
+    def __init__(self, sfilename, lfilename, transform, context_enable=False):
         self.sprites = np.load(sfilename)
         self.slabels = np.load(lfilename)
         print(f"sprite shape: {self.sprites.shape}")
         print(f"labels shape: {self.slabels.shape}")
         self.transform = transform
-        self.null_context = null_context
+        self.context_enable = context_enable
         self.sprites_shape = self.sprites.shape
         self.slabel_shape = self.slabels.shape
 
@@ -24,10 +24,11 @@ class CustomDataset(Dataset):
         # Return the image and label as a tuple
         if self.transform:
             image = self.transform(self.sprites[idx])
-            if self.null_context:
-                label = torch.tensor(0).to(torch.int64)
-            else:
+            if self.context_enable:
                 label = torch.tensor(self.slabels[idx]).to(torch.int64)
+            else:
+                label = torch.tensor(0).to(torch.int64)
+
         return (image, label)
 
     def getshapes(self):

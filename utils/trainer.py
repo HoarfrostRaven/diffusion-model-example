@@ -44,7 +44,7 @@ class Trainer:
                 x = x.to(self.device)
 
                 if self.context_enable:
-                    c = c.to(self.device)
+                    c = c.to(x)
                     # randomly mask out c
                     context_mask = torch.bernoulli(
                         torch.zeros(c.shape[0]) + 0.9).to(self.device)

@@ -138,7 +138,8 @@ class EmbedFC(nn.Module):
 
 
 class ContextUnet(nn.Module):
-    def __init__(self, in_channels, n_feat=256, n_cfeat=10, height=28):  # cfeat - context features
+    # cfeat - context features
+    def __init__(self, in_channels, n_feat=256, n_cfeat=10, width=28, height=28):
         super(ContextUnet, self).__init__()
 
         # number of input channels, number of intermediate feature maps and number of classes
@@ -146,6 +147,7 @@ class ContextUnet(nn.Module):
         self.n_feat = n_feat
         self.n_cfeat = n_cfeat
         # assume h == w. must be divisible by 4, so 28,24,20,16...
+        self.w = width
         self.h = height
 
         # Initialize the initial convolutional layer
@@ -167,7 +169,7 @@ class ContextUnet(nn.Module):
         # Initialize the up-sampling path of the U-Net with three levels
         self.up0 = nn.Sequential(
             nn.ConvTranspose2d(2 * n_feat, 2 * n_feat,
-                               self.h//4, self.h//4),  # up-sample
+                               self.w//4, self.h//4),  # up-sample
             nn.GroupNorm(8, 2 * n_feat),  # normalize
             nn.ReLU(),
         )
