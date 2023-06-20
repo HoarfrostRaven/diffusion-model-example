@@ -100,8 +100,11 @@ class UnetDown(nn.Module):
 
         # Create a list of layers for the downsampling block
         # Each block consists of two ResidualConvBlock layers, followed by a MaxPool2d layer for downsampling
-        layers = [ResidualConvBlock(in_channels, out_channels), ResidualConvBlock(
-            out_channels, out_channels), nn.MaxPool2d(2)]
+        layers = [
+            ResidualConvBlock(in_channels, out_channels),
+            ResidualConvBlock(out_channels, out_channels),
+            nn.MaxPool2d(2),
+        ]
 
         # Use the layers to create a sequential model
         self.model = nn.Sequential(*layers)
