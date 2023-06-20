@@ -1,0 +1,9 @@
+{
+  "height": 28,
+  "input_channels": 3,
+  "model_type": "unet",
+  "num_context_features": 10,
+  "num_features": 256,
+  "transformers_version": "4.31.0.dev0",
+  "width": 28
+}
