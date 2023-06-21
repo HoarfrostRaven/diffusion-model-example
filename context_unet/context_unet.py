@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
-from utils.unet_config import UnetConfig
+from context_unet.unet_config import UnetConfig
 
 
 class ResidualConvBlock(nn.Module):
