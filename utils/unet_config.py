@@ -21,5 +21,5 @@ class UnetConfig(PretrainedConfig):
         super().__init__(**kwargs)
 
 
-unet_config = UnetConfig()
-unet_config.save_pretrained("base-unet")
+# unet_config = UnetConfig()
+# unet_config.save_pretrained("base-unet")

@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from transformers import PreTrainedModel
+from utils.unet_config import UnetConfig
 
 
 class ResidualConvBlock(nn.Module):
@@ -140,53 +142,58 @@ class EmbedFC(nn.Module):
         return self.model(x)
 
 
-class ContextUnet(nn.Module):
+class ContextUnet(PreTrainedModel):
+    config_class = UnetConfig
+
     # cfeat - context features
-    def __init__(self, in_channels, n_feat=256, n_cfeat=10, width=28, height=28):
-        super(ContextUnet, self).__init__()
+    def __init__(self, config):
+        super().__init__(config)
 
         # number of input channels, number of intermediate feature maps and number of classes
-        self.in_channels = in_channels
-        self.n_feat = n_feat
-        self.n_cfeat = n_cfeat
+        self.in_channels = config.input_channels
+        self.n_feat = config.num_features
+        self.n_cfeat = config.num_context_features
         # assume h == w. must be divisible by 4, so 28,24,20,16...
-        self.w = width
-        self.h = height
+        self.w = config.width
+        self.h = config.height
 
         # Initialize the initial convolutional layer
-        self.init_conv = ResidualConvBlock(in_channels, n_feat, is_res=True)
+        self.init_conv = ResidualConvBlock(
+            self.in_channels, self.n_feat, is_res=True)
 
         # Initialize the down-sampling path of the U-Net with two levels
-        self.down1 = UnetDown(n_feat, n_feat)        # down1 #[10, 256, 8, 8]
-        self.down2 = UnetDown(n_feat, 2 * n_feat)    # down2 #[10, 256, 4,  4]
+        # down1 #[10, 256, 8, 8]
+        self.down1 = UnetDown(self.n_feat, self.n_feat)
+        # down2 #[10, 256, 4,  4]
+        self.down2 = UnetDown(self.n_feat, 2 * self.n_feat)
 
         # original: self.to_vec = nn.Sequential(nn.AvgPool2d(7), nn.GELU())
         self.to_vec = nn.Sequential(nn.AvgPool2d((4)), nn.GELU())
 
         # Embed the timestep and context labels with a one-layer fully connected neural network
-        self.timeembed1 = EmbedFC(1, 2*n_feat)
-        self.timeembed2 = EmbedFC(1, 1*n_feat)
-        self.contextembed1 = EmbedFC(n_cfeat, 2*n_feat)
-        self.contextembed2 = EmbedFC(n_cfeat, 1*n_feat)
+        self.timeembed1 = EmbedFC(1, 2*self.n_feat)
+        self.timeembed2 = EmbedFC(1, 1*self.n_feat)
+        self.contextembed1 = EmbedFC(self.n_cfeat, 2*self.n_feat)
+        self.contextembed2 = EmbedFC(self.n_cfeat, 1*self.n_feat)
 
         # Initialize the up-sampling path of the U-Net with three levels
         self.up0 = nn.Sequential(
-            nn.ConvTranspose2d(2 * n_feat, 2 * n_feat,
+            nn.ConvTranspose2d(2 * self.n_feat, 2 * self.n_feat,
                                self.w//4, self.h//4),  # up-sample
-            nn.GroupNorm(8, 2 * n_feat),  # normalize
+            nn.GroupNorm(8, 2 * self.n_feat),  # normalize
             nn.ReLU(),
         )
-        self.up1 = UnetUp(4 * n_feat, n_feat)
-        self.up2 = UnetUp(2 * n_feat, n_feat)
+        self.up1 = UnetUp(4 * self.n_feat, self.n_feat)
+        self.up2 = UnetUp(2 * self.n_feat, self.n_feat)
 
         # Initialize the final convolutional layers to map to the same number of channels as the input image
         self.out = nn.Sequential(
             # reduce number of feature maps   #in_channels, out_channels, kernel_size, stride=1, padding=0
-            nn.Conv2d(2 * n_feat, n_feat, 3, 1, 1),
-            nn.GroupNorm(8, n_feat),  # normalize
+            nn.Conv2d(2 * self.n_feat, self.n_feat, 3, 1, 1),
+            nn.GroupNorm(8, self.n_feat),  # normalize
             nn.ReLU(),
             # map to same number of channels as input
-            nn.Conv2d(n_feat, self.in_channels, 3, 1, 1),
+            nn.Conv2d(self.n_feat, self.in_channels, 3, 1, 1),
         )
 
     def forward(self, x, t, c=None):
